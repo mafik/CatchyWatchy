@@ -5,3 +5,5 @@
 .vscode/ipch
 .cache/
 compile_commands.json
+# Don't upload the config.h since it contains Wi-Fi credentials
+src/config.h
