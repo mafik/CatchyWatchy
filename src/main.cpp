@@ -47,11 +47,8 @@ const char *kMonthNames[] PROGMEM = {
     "stycznia", "lutego",   "marca",    "kwietnia",     "maja",      "czerwca",
     "lipca",    "sierpnia", "wrzesnia", "pazdziernika", "listopada", "grudnia"};
 
-constexpr bool kDebug = true;
-const char *kWiFiSSID PROGMEM = "YOUR WIFI PASSWORD HERE";
-const char *kWiFiPass PROGMEM = "YOUR WIFI SSID HERE";
-const char *kTZ PROGMEM = "CET-1CEST,M3.5.0,M10.5.0/3";
-constexpr uint8_t kWiFiUpdateInterval = 30;
+#include "config.h"
+
 DS3232RTC RTC(false);
 GxEPD2_BW<GxEPD2_154_D67, GxEPD2_154_D67::HEIGHT>
     display(GxEPD2_154_D67(CS, DC, RESET, BUSY));
@@ -217,13 +214,35 @@ void showWatchFace(bool partialRefresh) {
   display.hibernate();
 }
 
+void setThreadCore(int core_id) {
+  auto cfg = esp_pthread_get_default_config();
+  cfg.pin_to_core = core_id;
+  esp_pthread_set_cfg(&cfg);
+}
+
+std::vector<std::thread> threads;
+
+void checkThreadsConfigured() {
+  static bool pthreads_configured = false;
+  if (!pthreads_configured) {
+    // Run extra threads on the other core
+    setThreadCore(0);
+    pthreads_configured = true;
+  }
+}
+
 void vibMotor() {
-  if (kDebug)
-    printf("VibMotor (core %d)\n", xPortGetCoreID());
-  pinMode(VIB_MOTOR_PIN, OUTPUT);
+  static bool pin_mode_set = false;
+  if (!pin_mode_set) {
+    pinMode(VIB_MOTOR_PIN, OUTPUT);
+    pin_mode_set = true;
+  }
   digitalWrite(VIB_MOTOR_PIN, true);
-  delay(50);
-  digitalWrite(VIB_MOTOR_PIN, false);
+  checkThreadsConfigured();
+  threads.emplace_back([]() {
+    delay(50);
+    digitalWrite(VIB_MOTOR_PIN, false);
+  });
 }
 
 void bluetoothApp() {
@@ -238,11 +257,10 @@ void bluetoothApp() {
     }
     delay(10);
   }
-  std::thread vib2(vibMotor);
+  vibMotor();
   drawWatchFace();
   display.display(true);
   display.hibernate();
-  vib2.join();
 }
 
 char *formatTime(int sec) {
@@ -396,19 +414,11 @@ void timerApp() {
 
 void handleButtonPress() {
   uint64_t wakeupBit = esp_sleep_get_ext1_wakeup_status();
-  std::thread vib(vibMotor);
   if (wakeupBit & MENU_BTN_MASK) {
     bluetoothApp();
   } else if (wakeupBit & DOWN_BTN_MASK) {
     timerApp();
   }
-  vib.join();
-}
-
-void setThreadCore(int core_id) {
-  auto cfg = esp_pthread_get_default_config();
-  cfg.pin_to_core = core_id;
-  esp_pthread_set_cfg(&cfg);
 }
 
 void setup() {
@@ -417,10 +427,12 @@ void setup() {
 
   esp_sleep_wakeup_cause_t wakeup_reason;
   wakeup_reason = esp_sleep_get_wakeup_cause(); // get wake up reason
-  Wire.begin(SDA, SCL);                         // init i2c
 
-  // Run extra threads on the other core
-  setThreadCore(xPortGetCoreID() ? 0 : 1);
+  if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT1) {
+    vibMotor();
+  }
+
+  Wire.begin(SDA, SCL); // init i2c
 
   setenv("TZ", kTZ, 1);
   tzset();
@@ -445,6 +457,10 @@ void setup() {
     rtcConfig();
     showWatchFace(false); // full update on reset
     break;
+  }
+
+  for (auto &thread : threads) {
+    thread.join();
   }
 
   deepSleep();
