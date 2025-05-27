@@ -7,3 +7,55 @@
 compile_commands.json
 # Don't upload the config.h since it contains Wi-Fi credentials
 src/config.h
+
+
+#Android part
+# built application files
+*.apk
+*.ap_
+
+# files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# generated files
+Android/bin/
+Android/gen/
+Android/out/
+Android/build/
+Android/generated/
+
+# Local configuration file (sdk path, etc)
+Android/local.properties
+
+# Eclipse project files
+Android/.classpath
+Android/.project
+
+# Windows thumbnail db
+Android/.DS_Store
+
+# IDEA/Android Studio project files, because
+# the project can be imported from settings.gradle.kts
+*.iml
+Android/.idea/*
+!.idea/copyright
+# Keep the code styles.
+!/.idea/codeStyles
+/.idea/codeStyles/*
+!/.idea/codeStyles/Project.xml
+!/.idea/codeStyles/codeStyleConfig.xml
+
+# Gradle cache
+Android/.gradle
+
+# Sandbox stuff
+Android/_sandbox
+
+# Android Studio captures folder
+Android/captures/
+
+# Kotlin
+Android/.kotlin

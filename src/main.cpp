@@ -9,6 +9,7 @@
 #include <thread>
 #include <time.h>
 
+#include "BLE.h"
 #include "MadeSunflower39pt7b.h"
 #include "Pokemon_Classic4pt7b.h"
 #include "bluetooth_bitmap.h"
@@ -251,8 +252,12 @@ void bluetoothApp() {
   display.display(true); // true means "partial refresh"
   display.hibernate();
   pinMode(MENU_BTN_PIN, INPUT);
+  BLE ble{};
   while (true) {
     if (digitalRead(MENU_BTN_PIN)) {
+      break;
+    }
+    if (ble.notified()) {
       break;
     }
     delay(10);
