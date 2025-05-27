@@ -12,7 +12,7 @@ CatchyWatchy is a ROM for [Watchy by SQFMI](https://watchy.sqfmi.com/).
 
 CatchyWatchy was developed for personal use and some settings were hardcoded during its development. The UI language is set to Polish, the weather location is set to Łódź, timezone, WiFi SSID & password are provided as C constants. You will have to edit CatchyWatchy sources & rebuild it in order to personalize it. The recommended way to do this is to use clone this repo & open it with VSCode with PlatformIO extension installed.
 
-The Bluetooth Settings Screen should allow for customization of the watch settings but is not implemented at the moment. The plan for this screen is to expose a Bluetooth GATT Service which allows reading & writing of watch properties. Reading & writing of watch settings can be achieved using a Bluetooth Companion Web App based on https://web.dev/bluetooth/ & hosted on GitHub. Neither Bluetooth GATT Service nor the Bluetooth Companion Web App are implemented though. The Bluetooth Settings Screen is an image only. The personal use case of the author was satisfied with hardcoded values so the Bluetooth Settings Screen is only a loose plan at this point.
+The Bluetooth Settings Screen works in tandem with an Android companion app. When it's opened, it makes the companion app on the smartphone call a predefined Tasker task.
 
 Working features:
 
@@ -21,6 +21,7 @@ Working features:
 * Current temperature & rainfall
 * WiFi time & weather synchronization every 30 minutes
 * Timer
+* Bluetooth-triggered tasker task
 
 The weather is fetched from [IMGW](https://www.imgw.pl/en) (Institute of Meteorology and Water Management in Poland) - if you live elsewhere you'll probably want to change it to a different weather provider.
 
@@ -39,7 +40,7 @@ Bluetooth Settings Screen:
 
 * Upper Left Button => Nothing
 * Upper Right Button => Nothing
-* Lower Left Button => Go to Main Screen
+* Lower Left Button => Cancel and go to Main Screen
 * Lower Right Button => Nothing
 
 Timer:
