@@ -246,6 +246,43 @@ void vibMotor() {
   });
 }
 
+// two short vibrations with decreasing speed
+void vibBad() {
+  checkThreadsConfigured();
+  threads.emplace_back([]() {
+    for (int i = 0; i < 2; ++i) {
+      if (i)
+        delay(100);
+      analogWrite(VIB_MOTOR_PIN, 255);
+      delay(50);
+      analogWrite(VIB_MOTOR_PIN, 128);
+      delay(50);
+      analogWrite(VIB_MOTOR_PIN, 96);
+      delay(50);
+      analogWrite(VIB_MOTOR_PIN, 64);
+      delay(50);
+      analogWrite(VIB_MOTOR_PIN, 32);
+      delay(50);
+      analogWrite(VIB_MOTOR_PIN, 0);
+    }
+    digitalWrite(VIB_MOTOR_PIN, false);
+  });
+}
+
+// one rising vibration
+void vibGood() {
+  checkThreadsConfigured();
+  threads.emplace_back([]() {
+    static const uint8_t kSteps[] = {32, 64, 96, 128, 255};
+    for (int i = 0; i < sizeof(kSteps); ++i) {
+      analogWrite(VIB_MOTOR_PIN, kSteps[i]);
+      delay(100);
+    }
+    analogWrite(VIB_MOTOR_PIN, 0);
+    digitalWrite(VIB_MOTOR_PIN, false);
+  });
+}
+
 void bluetoothApp() {
   display.init(0, false);
   display.drawBitmap(0, 0, kBluetoothBitmap, 200, 200, GxEPD_WHITE);
@@ -253,16 +290,23 @@ void bluetoothApp() {
   display.hibernate();
   pinMode(MENU_BTN_PIN, INPUT);
   BLE ble{};
+  auto start = millis();
   while (true) {
+    auto now = millis();
+    if (now - start > 30000) {
+      vibBad();
+      break;
+    }
     if (digitalRead(MENU_BTN_PIN)) {
+      vibMotor();
       break;
     }
     if (ble.notified()) {
+      vibGood();
       break;
     }
     delay(10);
   }
-  vibMotor();
   drawWatchFace();
   display.display(true);
   display.hibernate();
